@@ -1,0 +1,14 @@
+*
+!service.py
+!bus_model.py
+!bus_profile.py
+!bus_state.py
+!commands.py
+!emulator.py
+!ha_discovery.py
+!intesis_errors.py
+!modbus_rtu.py
+!rtu_stream.py
+!requirements.txt
+!profiles
+!profiles/*.json

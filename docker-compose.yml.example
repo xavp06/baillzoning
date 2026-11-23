@@ -1,0 +1,30 @@
+services:
+  baillzoning:
+    build: .
+    image: baillzoning:latest
+    container_name: baillzoning
+    network_mode: host
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      WAVESHARE_HOST: ${WAVESHARE_HOST:?renseigner WAVESHARE_HOST dans .env}
+      WAVESHARE_PORT: ${WAVESHARE_PORT:-502}
+      MQTT_HOST: ${MQTT_HOST:-localhost}
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_PREFIX: ${MQTT_PREFIX:-baillzoning}
+      MQTT_USER: ${MQTT_USER:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      EMU_RESPOND: ${EMU_RESPOND:-1}
+      HOT_MIN: ${HOT_MIN:-16}
+      HOT_MAX: ${HOT_MAX:-30}
+      COLD_MIN: ${COLD_MIN:-16}
+      COLD_MAX: ${COLD_MAX:-30}
+      THERMOSTAT_COUNT: ${THERMOSTAT_COUNT:-5}
+      THERMOSTAT_NAMES: ${THERMOSTAT_NAMES:-}
+      VERIFIED_THERMOSTATS: ${VERIFIED_THERMOSTATS:-}
+    volumes:
+      - ./data:/app/data

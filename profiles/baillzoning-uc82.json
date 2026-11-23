@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "name": "baillzoning-uc82",
+  "description": "Carte du bus relevée sur une installation avec UC firmware 82, passerelle Intesis DK-RC-MBS-1, 5 thermostats. Adresses validées sur le site et sur le bus.",
+  "firmware": { "uc": 82 },
+  "units": { "uc": 10, "intesis": 32, "emulator": 10 },
+  "uc": {
+    "firmware": { "offset": 0, "type": "raw", "confidence": "validated", "publish_as": "firmware_uc" },
+    "regulation_on": { "offset": 1, "type": "bool", "confidence": "validated", "publish_as": "marche_regulation" },
+    "mode_return": {
+      "offset": 8,
+      "type": "enum",
+      "enum": { "0": "arret", "1": "froid", "2": "chauffage", "3": "deshumidification" },
+      "confidence": "validated",
+      "publish_as": "mode"
+    }
+  },
+  "intesis": {
+    "on": { "offset": 0, "type": "bool", "confidence": "validated", "publish_as": "marche" },
+    "mode": { "offset": 1, "type": "raw", "confidence": "validated", "publish_as": "mode" },
+    "ventilation": { "offset": 2, "type": "raw", "confidence": "validated", "publish_as": "ventilation" },
+    "hours": { "offset": 9, "type": "raw", "confidence": "validated", "publish_as": "heures_fonctionnement" },
+    "setpoint": { "offset": 23, "type": "scaled", "scale": 10, "confidence": "validated", "publish_as": "consigne_reelle" },
+    "return_temp": { "offset": 5, "type": "scaled", "scale": 10, "confidence": "validated", "publish_as": "temp_reprise" },
+    "alarm": { "offset": 10, "type": "bool", "confidence": "validated", "publish_as": "alarme" },
+    "outside_temp": { "offset": 22, "type": "scaled", "scale": 10, "unknown_value": 32768, "confidence": "validated", "publish_as": "temp_exterieure" },
+    "error_code": { "offset": 11, "type": "raw", "confidence": "validated", "publish_as": "erreur_code" }
+  },
+  "thermostats": {
+    "max_count": 6,
+    "validated_count": 5,
+    "block": { "base": 16, "stride": 20, "marker": 0, "marker_value": 43690, "confidence": "validated" },
+    "read": {
+      "connecte": { "offset": 0, "type": "marker", "confidence": "validated" },
+      "zone": { "offset": 2, "type": "raw", "confidence": "hypothesis" },
+      "temperature": { "offset": 1, "type": "temperature", "scale": 10, "confidence": "validated" },
+      "marche": { "offset": 3, "type": "bool", "confidence": "validated" },
+      "consigne_chaud_confort": { "offset": 4, "type": "scaled", "scale": 10, "confidence": "validated" },
+      "consigne_chaud_eco": { "offset": 5, "type": "scaled", "scale": 10, "confidence": "validated" },
+      "consigne_froid_confort": { "offset": 6, "type": "scaled", "scale": 10, "confidence": "validated" },
+      "consigne_froid_eco": { "offset": 7, "type": "scaled", "scale": 10, "confidence": "validated" },
+      "preset": { "offset": 8, "type": "enum", "enum": { "1": "confort", "2": "eco" }, "confidence": "validated" },
+      "servo_etat": { "offset": 9, "type": "raw", "confidence": "hypothesis" },
+      "tension_pile": { "offset": 10, "type": "scaled", "scale": 10, "low_below": 2.35, "confidence": "hypothesis" },
+      "consigne_effective": { "offset": 12, "type": "scaled", "scale": 10, "confidence": "validated" }
+    },
+    "command": {
+      "base": 10,
+      "stride": 10,
+      "signal": 0,
+      "confidence": "validated",
+      "fields": {
+        "marche": { "bit": 1, "offset": 1, "uc_offset": 3 },
+        "consigne_chaud_confort": { "bit": 2, "offset": 2, "uc_offset": 4, "scale": 10 },
+        "consigne_chaud_eco": { "bit": 4, "offset": 3, "uc_offset": 5, "scale": 10 },
+        "consigne_froid_confort": { "bit": 8, "offset": 4, "uc_offset": 6, "scale": 10 },
+        "consigne_froid_eco": { "bit": 16, "offset": 5, "uc_offset": 7, "scale": 10 },
+        "preset": { "bit": 32, "offset": 6, "uc_offset": 8 }
+      }
+    },
+    "presets": {
+      "values": { "1": "confort", "2": "eco" },
+      "commands": { "comfort": 1, "eco": 2 }
+    },
+    "payloads": {
+      "mode": { "auto": 1, "off": 0 }
+    }
+  },
+  "mode": {
+    "codes": { "arret": 0, "froid": 1, "chauffage": 2, "deshumidification": 3 },
+    "code": 4,
+    "update_flag": 3,
+    "signal": 0,
+    "uc_return": 8,
+    "confidence": "validated"
+  },
+  "features": {
+    "ventilation": { "min_firmware": 83, "mode_code": 4 }
+  },
+  "timing": {
+    "min_gap": 5,
+    "clear_after": 75,
+    "confirm_wait": 150,
+    "max_queue": 10,
+    "publish_every": 5,
+    "heartbeat_every": 60,
+    "stale_after": 60,
+    "uc_stale_after": 300,
+    "save_every": 60
+  },
+  "limits": {
+    "hot": [16, 30],
+    "cold": [16, 30]
+  }
+}

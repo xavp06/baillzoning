@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/xavp06/baillzoning/profiles/schema.json",
+  "title": "Profil de carte du bus BaillZoning",
+  "description": "Décrit les adresses, codes et unités du bus pour une combinaison passerelle + firmware. Les valeurs d'environnement (bornes, thermostats autorisés, réseau) ne figurent pas ici.",
+  "type": "object",
+  "required": ["schema_version", "name", "units", "uc", "intesis", "thermostats", "mode", "timing"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "firmware": {
+      "type": "object",
+      "description": "Firmware de l'UC pour lequel le profil a été établi, et fonctionnalités conditionnées.",
+      "required": ["uc"],
+      "properties": {
+        "uc": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "units": {
+      "type": "object",
+      "description": "Adresses Modbus des équipements sur le bus RS-485.",
+      "required": ["uc", "intesis", "emulator"],
+      "properties": {
+        "uc": { "type": "integer", "minimum": 1, "maximum": 247 },
+        "intesis": { "type": "integer", "minimum": 1, "maximum": 247 },
+        "emulator": { "type": "integer", "minimum": 1, "maximum": 247, "description": "Adresse émulée (la passerelle 10)." }
+      },
+      "additionalProperties": false
+    },
+    "uc": {
+      "type": "object",
+      "description": "Registres de l'UC (lus en holding).",
+      "required": ["firmware", "regulation_on", "mode_return"],
+      "properties": {
+        "firmware": { "$ref": "#/$defs/field" },
+        "regulation_on": { "$ref": "#/$defs/field" },
+        "mode_return": { "$ref": "#/$defs/field" }
+      },
+      "additionalProperties": false
+    },
+    "intesis": {
+      "type": "object",
+      "description": "Registres de l'unité intérieure, lus via la passerelle Intesis.",
+      "required": ["on", "mode", "ventilation", "hours", "setpoint", "return_temp", "alarm", "outside_temp", "error_code"],
+      "properties": {
+        "on": { "$ref": "#/$defs/field" },
+        "mode": { "$ref": "#/$defs/field" },
+        "ventilation": { "$ref": "#/$defs/field" },
+        "hours": { "$ref": "#/$defs/field" },
+        "setpoint": { "$ref": "#/$defs/field" },
+        "return_temp": { "$ref": "#/$defs/field" },
+        "alarm": { "$ref": "#/$defs/field" },
+        "outside_temp": { "$ref": "#/$defs/field" },
+        "error_code": { "$ref": "#/$defs/field" }
+      },
+      "additionalProperties": false
+    },
+    "thermostats": {
+      "type": "object",
+      "required": ["max_count", "validated_count", "block", "read", "command", "presets", "payloads"],
+      "properties": {
+        "max_count": { "type": "integer", "minimum": 1, "description": "Nombre maximal de thermostats que le profil décrit." },
+        "validated_count": { "type": "integer", "minimum": 0, "description": "Nombre de thermostats dont les adresses ont été observées. Au-delà, les blocs sont des hypothèses." },
+        "block": {
+          "type": "object",
+          "description": "Bloc de lecture de l'UC pour le thermostat n : base + stride × (n - 1).",
+          "required": ["base", "stride", "marker", "marker_value", "confidence"],
+          "properties": {
+            "base": { "type": "integer", "minimum": 0 },
+            "stride": { "type": "integer", "minimum": 1 },
+            "marker": { "type": "integer", "minimum": 0, "description": "Offset du marqueur de bloc valide dans le bloc." },
+            "marker_value": { "type": "integer", "minimum": 0 },
+            "confidence": { "$ref": "#/$defs/confidence" }
+          },
+          "additionalProperties": false
+        },
+        "read": {
+          "type": "object",
+          "description": "Champs lus dans le bloc de l'UC, par nom publié.",
+          "additionalProperties": { "$ref": "#/$defs/field" }
+        },
+        "command": {
+          "type": "object",
+          "description": "Zone d'écriture (FC4) pour le thermostat n : base + stride × (n - 1). Avec base 10 et stride 10, c'est 10 × n.",
+          "required": ["base", "stride", "signal", "confidence", "fields"],
+          "properties": {
+            "base": { "type": "integer", "minimum": 0 },
+            "stride": { "type": "integer", "minimum": 1 },
+            "signal": { "type": "integer", "minimum": 0, "description": "Registre de signal de commande (input)." },
+            "confidence": { "$ref": "#/$defs/confidence" },
+            "fields": {
+              "type": "object",
+              "description": "Champs commandables : bit du masque, offset de la valeur dans la zone, offset du retour UC.",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["bit", "offset", "uc_offset"],
+                "properties": {
+                  "bit": { "type": "integer", "minimum": 1 },
+                  "offset": { "type": "integer", "minimum": 1 },
+                  "uc_offset": { "type": "integer", "minimum": 0, "description": "Offset du retour de l'UC, dans le bloc de lecture." },
+                  "scale": { "type": "number", "exclusiveMinimum": 0, "description": "Multiplie la valeur demandée avant envoi (ex. 10 pour des consignes en dixièmes de degré). Défaut 1." }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "presets": {
+          "type": "object",
+          "required": ["values", "commands"],
+          "properties": {
+            "values": {
+              "type": "object",
+              "description": "Code lu dans le bloc (uc_offset du préréglage) -> nom publié.",
+              "additionalProperties": { "type": "string" }
+            },
+            "commands": {
+              "type": "object",
+              "description": "Nom demandé depuis HA -> code envoyé dans la zone.",
+              "additionalProperties": { "type": "integer" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "payloads": {
+          "type": "object",
+          "description": "Valeurs envoyées pour un changement de marche depuis HA.",
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "type": "object",
+              "description": "Nom HA -> valeur de marche.",
+              "additionalProperties": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "mode": {
+      "type": "object",
+      "description": "Mode général de la régulation.",
+      "required": ["codes", "code", "update_flag", "signal", "uc_return"],
+      "properties": {
+        "codes": {
+          "type": "object",
+          "description": "Nom -> code écrit dans le registre de mode.",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "code": { "type": "integer", "minimum": 0, "description": "Registre d'input où est écrit le code de mode." },
+        "update_flag": { "type": "integer", "minimum": 0, "description": "Registre d'input mis à 1 avec une commande de mode." },
+        "signal": { "type": "integer", "minimum": 0, "description": "Signal de commande commun (input)." },
+        "uc_return": { "type": "integer", "minimum": 0, "description": "Offset du retour de l'UC pour le mode." },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "features": {
+      "type": "object",
+      "description": "Fonctionnalités conditionnées par le firmware. Une fonctionnalité absente n'est pas proposée à HA.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["min_firmware"],
+        "properties": {
+          "min_firmware": { "type": "integer", "minimum": 0 },
+          "mode_code": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "timing": {
+      "type": "object",
+      "description": "Temporisations, en secondes (sauf indication).",
+      "required": ["min_gap", "clear_after", "confirm_wait", "max_queue", "publish_every", "heartbeat_every", "stale_after", "uc_stale_after", "save_every"],
+      "properties": {
+        "min_gap": { "type": "number", "minimum": 0 },
+        "clear_after": { "type": "number", "minimum": 0 },
+        "confirm_wait": { "type": "number", "minimum": 0 },
+        "max_queue": { "type": "integer", "minimum": 1 },
+        "publish_every": { "type": "number", "minimum": 0 },
+        "heartbeat_every": { "type": "number", "minimum": 0 },
+        "stale_after": { "type": "number", "minimum": 0 },
+        "uc_stale_after": { "type": "number", "minimum": 0 },
+        "save_every": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "description": "Bornes par défaut des consignes (°C). Les variables HOT_MIN, HOT_MAX, COLD_MIN, COLD_MAX les remplacent.",
+      "required": ["hot", "cold"],
+      "properties": {
+        "hot": { "$ref": "#/$defs/range" },
+        "cold": { "$ref": "#/$defs/range" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "enum": ["validated", "hypothesis"],
+      "description": "validated : observé sur le bus et confirmé. hypothesis : publié, mais à confirmer ; une commande vers ce bloc est refusée."
+    },
+    "range": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "field": {
+      "type": "object",
+      "required": ["offset", "type", "confidence"],
+      "properties": {
+        "offset": { "type": "integer", "minimum": 0 },
+        "type": { "enum": ["raw", "scaled", "bool", "enum", "marker", "temperature"] },
+        "scale": { "type": "number", "exclusiveMinimum": 0, "description": "Divise la valeur brute (ex. 10 pour des dixièmes de degré)." },
+        "enum": { "type": "object", "additionalProperties": { "type": "string" } },
+        "on_value": { "type": "integer", "description": "Valeur brute correspondant à ON pour le type bool (défaut 1)." },
+        "unknown_value": { "type": "integer", "description": "Valeur brute à ignorer (ex. capteur absent)." },
+        "low_below": { "type": "number", "description": "Publie aussi un indicateur « faible » si la valeur mise à l'échelle est inférieure à ce seuil (ex. pile)." },
+        "publish_as": { "type": "string", "description": "Nom publié, si différent de la clé." },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
