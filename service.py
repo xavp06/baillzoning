@@ -339,17 +339,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true", help="affiche sans publier sur MQTT")
     parser.add_argument("--duration", type=int, default=0, help="arrêt automatique après N secondes")
+    parser.add_argument("--diagnostic", action="store_true",
+                        help="lecture passive seule : compare le bus au profil, rapport JSON, rien n'est écrit")
     args = parser.parse_args()
-
-    try:
-        PROFILE.check_verified(VERIFIED)
-    except ProfileError as err:
-        raise SystemExit(str(err))
 
     host = os.environ.get("WAVESHARE_HOST")
     if not host:
         raise SystemExit("WAVESHARE_HOST non défini (adresse de la passerelle RS-485/Ethernet)")
     port = int(os.environ.get("WAVESHARE_PORT", "502"))
+
+    if args.diagnostic:
+        from diagnostic import default_output, run as run_diagnostic
+        return run_diagnostic(host, port, args.duration or 1800, default_output())
+
+    try:
+        PROFILE.check_verified(VERIFIED)
+    except ProfileError as err:
+        raise SystemExit(str(err))
     prefix = os.environ.get("MQTT_PREFIX", "baillzoning")
     mqtt_cfg = {
         "host": os.environ.get("MQTT_HOST", "localhost"),

@@ -2,6 +2,7 @@
 !service.py
 !bus_model.py
 !bus_profile.py
+!diagnostic.py
 !bus_state.py
 !commands.py
 !emulator.py

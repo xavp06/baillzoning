@@ -55,6 +55,19 @@ Une autre passerelle ou un autre firmware demande un nouveau profil, établi à 
 
 Ce qui reste dans le code : la logique de séquencement des commandes, les règles de sécurité, la correspondance des noms de préréglage vers Home Assistant (`comfort`/`eco`) et les définitions des entités HA.
 
+## Mode diagnostic
+
+Pour vérifier qu'un profil correspond au bus observé, sans rien écrire :
+
+```sh
+WAVESHARE_HOST=192.0.2.10 python3 service.py --diagnostic --duration 1800
+```
+
+- Lecture seule : aucun octet envoyé sur le bus, l'UC n'est pas émulée, rien n'est publié sur MQTT, l'état de l'émulateur et les commandes ne sont pas touchés.
+- Compare le bus au profil chargé (`PROFILE`) : firmware, adresses interrogées, marqueurs des blocs thermostats, valeurs plausibles, codes connus.
+- Produit un rapport texte et `data/diagnostic.json` (ou `DIAGNOSTIC_OUTPUT`).
+- Une seule connexion à la passerelle est possible : arrêter le service normal avant (sur Docker, Stop de la stack).
+
 ## Tests
 
 ```sh

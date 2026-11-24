@@ -9,7 +9,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY service.py bus_model.py bus_profile.py bus_state.py commands.py emulator.py \
+COPY service.py bus_model.py bus_profile.py bus_state.py commands.py diagnostic.py emulator.py \
      ha_discovery.py intesis_errors.py modbus_rtu.py rtu_stream.py ./
 COPY profiles/ ./profiles/
 
